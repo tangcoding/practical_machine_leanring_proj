@@ -29,8 +29,8 @@ https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
 Read data from file
 
 ```r
-# read training set
-df <- read.csv("pml-training.csv", na.strings=c("NA",""))
+# read the training set
+df <-  read.csv("pml-training.csv", na.strings=c("NA",""))
 ```
 
 The original dataset has 160 variables including the “classe” class variable that indicates the manner of the exercise activity. To reduce dimensionality, only the most useful predictors (i.e., variables) were selected. This was accomplished by eliminating variables that had NAs, non-numeric variables, variables that had too few unique values.
@@ -38,16 +38,10 @@ The original dataset has 160 variables including the “classe” class variable
 
 ```r
 library(caret)
-```
 
-```
-## Loading required package: lattice
-## Loading required package: ggplot2
-```
-
-```r
 # define a function data frame preprocessing
 preproc_df <- function(df){
+  
     # Removal of NAs
     clean_df <- df[, which(as.numeric(colSums(is.na(df)))==0)]
     # Removal of Non-numeric Variables
@@ -58,6 +52,7 @@ preproc_df <- function(df){
     nzv <- nearZeroVar(clean_df[, -end], saveMetrics=TRUE)
     clean_df <- clean_df[,!as.logical(nzv$nzv)]
     return(clean_df)
+    
 }
 
 clean_df <-preproc_df(df)
@@ -96,7 +91,7 @@ First split the training data into training and validation sets.
 
 ```r
 set.seed(19)
-inTrain <- createDataPartition(df$classe, p=0.6, list = FALSE)
+inTrain <- createDataPartition(df$classe, p = 0.6, list = FALSE)
 train <- clean_df[inTrain,]
 subtest <- clean_df[-inTrain,]
 ```
@@ -107,35 +102,27 @@ Using the features in the training set, we  build our model using the Random For
 
 ```r
 ctrl <- trainControl(allowParallel = TRUE, method = "cv", number = 2);
-model <- train(classe ~., data = train, method = "rf", trControl=ctrl, importance=TRUE)
-```
+model <- train(classe ~., data = train, method = "rf", trControl=ctrl, importance = TRUE)
 
-```
-## 1 package is needed for this model and is not installed. (randomForest). Would you like to try to install it now?
-## 1: yes
-## 2: no
-## 
-## 
-## The downloaded binary packages are in
-## 	/var/folders/7j/zccg_dhs78l68_zhh0hd9jjh0000gn/T//RtmphbSsZp/downloaded_packages
-```
-
-```
-## Loading required package: randomForest
-## randomForest 4.6-10
-## Type rfNews() to see new features/changes/bug fixes.
-```
-
-```
-## Error in loadNamespace(name): there is no package called 'e1071'
-```
-
-```r
 model$finalModel
 ```
 
 ```
-## Error in eval(expr, envir, enclos): object 'model' not found
+## 
+## Call:
+##  randomForest(x = x, y = y, mtry = param$mtry, importance = TRUE) 
+##                Type of random forest: classification
+##                      Number of trees: 500
+## No. of variables tried at each split: 27
+## 
+##         OOB estimate of  error rate: 0.73%
+## Confusion matrix:
+##      A    B    C    D    E class.error
+## A 3341    6    0    0    1 0.002090800
+## B   16 2255    8    0    0 0.010530935
+## C    0   11 2038    5    0 0.007789679
+## D    0    0   27 1903    0 0.013989637
+## E    0    1    6    5 2153 0.005542725
 ```
 The estimate out of sample error is about 0.73%.
 
@@ -146,52 +133,55 @@ Calculate the “out of sample” accuracy which is the prediction accuracy of o
 
 ```r
 subtest_pred <- predict(model, subtest)
-```
-
-```
-## Error in predict(model, subtest): object 'model' not found
-```
-
-```r
 subtest_error <- confusionMatrix(subtest_pred, subtest$classe)
-```
-
-```
-## Error in confusionMatrix(subtest_pred, subtest$classe): object 'subtest_pred' not found
-```
-
-```r
 subtest_error
 ```
 
 ```
-## Error in eval(expr, envir, enclos): object 'subtest_error' not found
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 2225    8    0    0    0
+##          B    6 1506    2    2    0
+##          C    1    3 1360   14    4
+##          D    0    1    6 1269    4
+##          E    0    0    0    1 1434
+## 
+## Overall Statistics
+##                                          
+##                Accuracy : 0.9934         
+##                  95% CI : (0.9913, 0.995)
+##     No Information Rate : 0.2845         
+##     P-Value [Acc > NIR] : < 2.2e-16      
+##                                          
+##                   Kappa : 0.9916         
+##  Mcnemar's Test P-Value : NA             
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9969   0.9921   0.9942   0.9868   0.9945
+## Specificity            0.9986   0.9984   0.9966   0.9983   0.9998
+## Pos Pred Value         0.9964   0.9934   0.9841   0.9914   0.9993
+## Neg Pred Value         0.9988   0.9981   0.9988   0.9974   0.9988
+## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
+## Detection Rate         0.2836   0.1919   0.1733   0.1617   0.1828
+## Detection Prevalence   0.2846   0.1932   0.1761   0.1631   0.1829
+## Balanced Accuracy      0.9977   0.9953   0.9954   0.9926   0.9971
 ```
 
 From the above result,  the out of sample accuracy value is 99.34%. Therefore the out of sample error is 1- 99.34% = 0.66%.
 
 ```r
 ose <- 1 - subtest_error$overall[1];
-```
-
-```
-## Error in eval(expr, envir, enclos): object 'subtest_error' not found
-```
-
-```r
 names(ose) <- "Out of Sample Error"
-```
-
-```
-## Error in names(ose) <- "Out of Sample Error": object 'ose' not found
-```
-
-```r
 ose
 ```
 
 ```
-## Error in eval(expr, envir, enclos): object 'ose' not found
+## Out of Sample Error 
+##         0.006627581
 ```
 The out of sample error is similar as the expected value.
 
@@ -215,26 +205,13 @@ dim(clean_test)
 ```r
 # predict
 answers <- predict(model, clean_test)
-```
-
-```
-## Error in predict(model, clean_test): object 'model' not found
-```
-
-```r
 answers <- as.character(answers)
-```
-
-```
-## Error in eval(expr, envir, enclos): object 'answers' not found
-```
-
-```r
 answers
 ```
 
 ```
-## Error in eval(expr, envir, enclos): object 'answers' not found
+##  [1] "B" "A" "B" "A" "A" "E" "D" "B" "A" "A" "B" "C" "B" "A" "E" "E" "A"
+## [18] "B" "B" "B"
 ```
 
 Finally, we write the answers to files as specified by the course instructor using the following code segment.
@@ -250,10 +227,6 @@ pml_write_files = function(x) {
 }
 
 pml_write_files(answers)
-```
-
-```
-## Error in pml_write_files(answers): object 'answers' not found
 ```
 
 ##Conclusions
